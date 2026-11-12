@@ -1,0 +1,79 @@
+:root {
+  --mt-fundo: #0f1720;
+  --mt-painel: #17212c;
+  --mt-menu: #121c26;
+  --mt-borda: #2b3b4b;
+  --mt-metal: #5bc0de;
+  --mt-nao: #f2a23a;
+  --mt-alerta: #e5534b;
+  --mt-texto-fraco: #9fb0c0;
+}
+
+body {
+  background: var(--mt-fundo);
+  color: #e8eef4;
+  font-family: Inter, system-ui, Arial, sans-serif;
+}
+
+.layout { display: flex; flex-wrap: wrap; min-height: 100vh; }
+.conteudo { flex: 999 1 560px; min-width: 0; padding: 28px 32px; }
+
+.sidebar {
+  flex: 0 0 220px;
+  background: var(--mt-menu);
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sidebar .logo { font-size: 20px; font-weight: 700; margin-bottom: 24px; }
+.sidebar .logo span { color: var(--mt-nao); }
+.sidebar a.link-menu {
+  color: var(--mt-texto-fraco);
+  text-decoration: none;
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+.sidebar a.link-menu:hover { color: #fff; }
+.sidebar a.link-menu.active { background: #1e2b38; color: #fff; }
+.sidebar .perfil { margin-top: auto; display: flex; align-items: center; gap: 10px; }
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--mt-nao); color: var(--mt-fundo);
+  font-weight: 700; display: inline-flex; align-items: center; justify-content: center;
+}
+.avatar.grande { width: 72px; height: 72px; font-size: 28px; }
+
+@media (max-width: 800px) {
+  .sidebar { flex-basis: 100%; flex-direction: row; flex-wrap: wrap; padding: 16px; }
+  .sidebar .logo { margin: 0 12px 0 0; width: 100%; }
+  .sidebar .perfil { margin-top: 0; }
+  .conteudo { padding: 20px 16px; }
+}
+
+.card { --bs-card-bg: var(--mt-painel); border: 0; border-radius: 12px; }
+.card-alerta { background: #3a1f22; border: 1px solid var(--mt-alerta); }
+.texto-fraco { color: var(--mt-texto-fraco); }
+.cor-metal { color: var(--mt-metal); }
+.cor-nao { color: var(--mt-nao); }
+.numero-grande { font-size: 34px; font-weight: 700; }
+
+.table { --bs-table-bg: transparent; --bs-table-border-color: var(--mt-borda); }
+.form-control, .form-select { background: var(--mt-fundo); border-color: var(--mt-borda); min-height: 44px; }
+.btn-metal { background: var(--mt-nao); border: 0; color: var(--mt-fundo); font-weight: 700; min-height: 44px; padding: 0 20px; }
+.btn-metal:hover { background: #ffb44f; color: var(--mt-fundo); }
+
+.barra { position: relative; height: 28px; background: var(--mt-fundo); border-radius: 14px; overflow: hidden; }
+.barra .preenchimento { height: 100%; }
+.barra .marca { position: absolute; top: 0; width: 2px; height: 100%; background: #fff; }
+
+.grafico { display: flex; align-items: flex-end; gap: 10px; height: 180px; }
+.grafico .coluna { flex: 1; display: flex; align-items: flex-end; gap: 3px; height: 100%; }
+.grafico .coluna div { flex: 1; border-radius: 3px 3px 0 0; }
+.rotulo-grafico { font-size: 12px; color: var(--mt-texto-fraco); text-align: center; flex: 1; }
+
+.boxplot { position: relative; height: 60px; margin-top: 40px; }
+.boxplot .linha { position: absolute; top: 29px; height: 2px; background: var(--mt-texto-fraco); }
+.boxplot .caixa { position: absolute; top: 10px; height: 40px; background: #1e2b38; border: 2px solid var(--mt-metal); }
+.boxplot .mediana { position: absolute; top: 10px; width: 2px; height: 40px; background: #fff; }
+.boxplot .outlier { position: absolute; top: 24px; width: 12px; height: 12px; border-radius: 50%; background: var(--mt-alerta); }

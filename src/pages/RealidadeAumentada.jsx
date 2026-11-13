@@ -9,7 +9,7 @@ const sensores = [
 ];
 
 // A parte de RA fica em public/ra/index.html (A-Frame + MindAR)
-const enderecoRA = `/ra/index.html?api=${encodeURIComponent(API_URL)}`;
+const enderecoRA = `${import.meta.env.BASE_URL}ra/index.html?api=${encodeURIComponent(API_URL)}`;
 
 export default function RealidadeAumentada() {
   const [ligado, setLigado] = useState(false);
@@ -68,7 +68,7 @@ export default function RealidadeAumentada() {
             <div className="card-body">
               <h2 className="h6 mb-3">Imagem para escanear</h2>
               <img
-                src="/ra/alvo.jpg"
+                src={`${import.meta.env.BASE_URL}ra/alvo.jpg`}
                 alt="Foto da mesa usada como alvo da RA"
                 className="img-fluid rounded"
                 onError={(e) => (e.currentTarget.style.display = "none")}

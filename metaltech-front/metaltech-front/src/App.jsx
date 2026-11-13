@@ -7,6 +7,7 @@ import Analises from "./pages/Analises";
 import Alertas from "./pages/Alertas";
 import Configuracoes from "./pages/Configuracoes";
 import Perfil from "./pages/Perfil";
+import RealidadeAumentada from "./pages/RealidadeAumentada";
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/historico" element={<Historico />} />
           <Route path="/analises" element={<Analises />} />
           <Route path="/alertas" element={<Alertas />} />
+          <Route path="/realidade-aumentada" element={<RealidadeAumentada />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/perfil" element={<Perfil />} />
         </Routes>

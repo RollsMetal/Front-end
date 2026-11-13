@@ -17,3 +17,10 @@ O front espera `GET /leituras` retornando uma lista em ordem cronológica:
 ```
 Se a API estiver fora do ar, aparece "API offline: sem dados" e todas as telas ficam zeradas.
 Para mudar rota ou campos, edite só a parte "ÁREA DO BACK-END" do arquivo `src/api.js`.
+
+## Realidade Aumentada
+Menu "Realidade Aumentada": usa A-Frame + MindAR (arquivos em `public/ra/`).
+- `targets.mind`: alvo compilado (foto da mesa).
+- `index.html`: cena de RA. Para mudar a posição de cada sensor, edite a lista `SENSORES` (x e y de 0 a 1 na foto).
+- Coloque a foto original em `public/ra/alvo.jpg` para ela aparecer na tela, caso queira escanear pelo monitor.
+- A câmera funciona em `localhost` ou em HTTPS (no celular, só em HTTPS).

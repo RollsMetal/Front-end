@@ -7,6 +7,7 @@ const links = [
   { texto: "Histórico", caminho: "/historico" },
   { texto: "Análises", caminho: "/analises" },
   { texto: "Alertas", caminho: "/alertas" },
+  { texto: "Realidade Aumentada", caminho: "/realidade-aumentada" },
   { texto: "Configurações", caminho: "/configuracoes" },
 ];
 

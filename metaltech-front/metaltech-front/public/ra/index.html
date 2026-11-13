@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>MetalTech - Realidade Aumentada</title>
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: Inter, system-ui, Arial, sans-serif; }
+    #dica, #status { position: fixed; z-index: 10; left: 50%; transform: translateX(-50%); padding: 8px 14px;
+      border-radius: 99px; background: rgba(15, 23, 32, 0.85); color: #e8eef4; font-size: 14px; pointer-events: none; }
+    #dica { bottom: 24px; }
+    #status { top: 16px; font-size: 12px; }
+    body.achou #dica { display: none; }
+    #linhas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: none; }
+    #cartoes { position: fixed; inset: 0; z-index: 11; pointer-events: none; display: none; }
+    body.achou #linhas, body.achou #cartoes { display: block; }
+    .cartao { position: absolute; left: 0; top: 0; width: 150px; box-sizing: border-box; padding: 10px 12px;
+      background: rgba(23, 33, 44, 0.92); border: 2px solid; border-radius: 12px; color: #e8eef4;
+      font-size: 12px; line-height: 1.35; display: flex; flex-direction: column; gap: 3px; }
+    .cartao strong { font-size: 13px; }
+    .cartao .valor { font-size: 15px; }
+    .cartao.alerta { background: rgba(58, 31, 34, 0.95); }
+  </style>
+</head>
+<body>
+  <div id="status">Conectando à API...</div>
+  <div id="dica">Aponte a câmera para a mesa</div>
+  <svg id="linhas"></svg>
+  <div id="cartoes"></div>
+
+  <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; maxTrack: 1;"
+           color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights"
+           vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
+           hud-sensores>
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <a-entity id="alvo" mindar-image-target="targetIndex: 0"></a-entity>
+  </a-scene>
+
+  <script>
+    // ============================================================
+    // ÁREA DO BACK-END: de onde vêm os dados (mesma rota do front)
+    // O endereço da API chega pela URL (?api=...) vindo do React.
+    // ============================================================
+    const API_URL = new URLSearchParams(location.search).get("api") || "http://localhost:8080/api";
+    const ROTA_LEITURAS = "/leituras";
+
+    // ============================================================
+    // ÁREA DOS SENSORES: posição de cada sensor na foto da mesa
+    // x: 0 = borda esquerda da foto, 1 = borda direita
+    // y: 0 = topo da foto, 1 = base da foto
+    // deslocamento: onde o cartão aparece em relação ao sensor (em pixels)
+    // ============================================================
+    const FOTO = { largura: 5712, altura: 4284 }; // tamanho da imagem do targets.mind
+    const ALTURA_ALVO = FOTO.altura / FOTO.largura; // o alvo tem largura 1 no A-Frame
+
+    const SENSORES = [
+      {
+        id: "capacitivo", nome: "Sensor capacitivo", cor: "#F2A23A",
+        funcao: "Detecta peças não metálicas (plástico, madeira...)",
+        x: 0.2, y: 0.55, deslocamento: { x: -10, y: -150 },
+        valor: (d) => `${d.naoMetalicas} peças não metálicas`,
+      },
+      {
+        id: "indutivo", nome: "Sensor indutivo", cor: "#5BC0DE",
+        funcao: "Detecta peças metálicas",
+        x: 0.5, y: 0.5, deslocamento: { x: 0, y: 150 },
+        valor: (d) => `${d.metalicas} peças metálicas`,
+      },
+      {
+        id: "iolink", nome: "Sensor IO-Link", cor: "#E5534B",
+        funcao: "Mede a distância e o nível do reservatório",
+        x: 0.8, y: 0.55, deslocamento: { x: 10, y: -150 },
+        valor: (d) => `Nível ${d.nivel}% · ${d.distanciaMm} mm`,
+      },
+    ];
+
+    // ---------- dados da API (zerados enquanto não há back-end) ----------
+    const ZERADOS = { metalicas: 0, naoMetalicas: 0, nivel: 0, distanciaMm: 0, online: false };
+    let dados = { ...ZERADOS };
+
+    function lerLimite() {
+      try { return Number(JSON.parse(localStorage.getItem("config")).limite) || 85; }
+      catch (e) { return 85; }
+    }
+
+    async function buscarDados() {
+      try {
+        const resposta = await fetch(API_URL + ROTA_LEITURAS);
+        if (!resposta.ok) throw new Error("Erro na API");
+        const lista = await resposta.json();
+        const ultima = lista[lista.length - 1];
+        dados = {
+          metalicas: lista.filter((l) => l.tipo === "METALICA").length,
+          naoMetalicas: lista.filter((l) => l.tipo === "NAO_METALICA").length,
+          nivel: ultima ? Math.round(Number(ultima.nivel)) : 0,
+          distanciaMm: ultima ? Number(ultima.distanciaMm) : 0,
+          online: true,
+        };
+      } catch (erro) {
+        dados = { ...ZERADOS };
+      }
+      desenharValores();
+    }
+
+    function desenharValores() {
+      document.getElementById("status").textContent = dados.online ? "API conectada" : "API offline: dados zerados";
+      SENSORES.forEach((s) => {
+        const cartao = document.getElementById("cartao-" + s.id);
+        cartao.querySelector(".valor").textContent = s.valor(dados);
+      });
+      document.getElementById("cartao-iolink").classList.toggle("alerta", dados.nivel > lerLimite());
+    }
+
+    // ---------- monta cartões, linhas e pinos 3D ----------
+    const alvo = document.getElementById("alvo");
+    SENSORES.forEach((s) => {
+      const cartao = document.createElement("div");
+      cartao.className = "cartao";
+      cartao.id = "cartao-" + s.id;
+      cartao.style.borderColor = s.cor;
+      cartao.innerHTML = `<strong style="color:${s.cor}">${s.nome}</strong><span>${s.funcao}</span><b class="valor"></b>`;
+      document.getElementById("cartoes").appendChild(cartao);
+
+      const linha = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      linha.id = "linha-" + s.id;
+      linha.setAttribute("stroke", s.cor);
+      linha.setAttribute("stroke-width", "3");
+      linha.setAttribute("stroke-linecap", "round");
+      document.getElementById("linhas").appendChild(linha);
+
+      // pino 3D que fica "grudado" na foto da mesa
+      const pino = document.createElement("a-entity");
+      pino.id = "pino-" + s.id;
+      pino.setAttribute("position", `${s.x - 0.5} ${(0.5 - s.y) * ALTURA_ALVO} 0.01`);
+      pino.innerHTML =
+        `<a-circle radius="0.02" color="${s.cor}" material="shader: flat"></a-circle>` +
+        `<a-ring radius-inner="0.035" radius-outer="0.045" color="${s.cor}" material="shader: flat; opacity: 0.9"` +
+        ` animation="property: scale; from: 1 1 1; to: 1.7 1.7 1; dir: alternate; loop: true; dur: 900"></a-ring>`;
+      alvo.appendChild(pino);
+    });
+    desenharValores();
+    buscarDados();
+    setInterval(buscarDados, 3000);
+
+    // ---------- a cada quadro: leva cartão e linha até o sensor na tela ----------
+    AFRAME.registerComponent("hud-sensores", {
+      init: function () {
+        this.achou = false;
+        this.pos = new THREE.Vector3();
+        alvo.addEventListener("targetFound", () => { this.achou = true; document.body.classList.add("achou"); });
+        alvo.addEventListener("targetLost", () => { this.achou = false; document.body.classList.remove("achou"); });
+      },
+      tick: function () {
+        if (!this.achou) return;
+        const camera = this.el.sceneEl.camera;
+        if (!camera) return;
+        const L = window.innerWidth;
+        const A = window.innerHeight;
+
+        SENSORES.forEach((s) => {
+          const pino = document.getElementById("pino-" + s.id);
+          if (!pino) return;
+          pino.object3D.getWorldPosition(this.pos);
+          this.pos.project(camera);
+          const x = (this.pos.x * 0.5 + 0.5) * L;
+          const y = (-this.pos.y * 0.5 + 0.5) * A;
+
+          const cartao = document.getElementById("cartao-" + s.id);
+          const linha = document.getElementById("linha-" + s.id);
+          const w = cartao.offsetWidth;
+          const h = cartao.offsetHeight;
+
+          // posição do cartão (sempre dentro da tela)
+          const cx = Math.min(Math.max(x + s.deslocamento.x, w / 2 + 8), L - w / 2 - 8);
+          const cy = Math.min(Math.max(y + s.deslocamento.y, h / 2 + 8), A - h / 2 - 8);
+          cartao.style.transform = `translate(${cx - w / 2}px, ${cy - h / 2}px)`;
+
+          // a linha vai do sensor até a borda mais próxima do cartão
+          const fx = Math.min(Math.max(x, cx - w / 2), cx + w / 2);
+          const fy = Math.min(Math.max(y, cy - h / 2), cy + h / 2);
+          linha.setAttribute("x1", x);
+          linha.setAttribute("y1", y);
+          linha.setAttribute("x2", fx);
+          linha.setAttribute("y2", fy);
+        });
+      },
+    });
+  </script>
+</body>
+</html>

@@ -1,83 +1,24 @@
-import { useState } from "react";
-import { API_URL } from "../api";
-import Cabecalho from "../components/Cabecalho";
-
-const sensores = [
-  { nome: "Sensor capacitivo", funcao: "Detecta peças não metálicas (plástico, madeira etc.)", cor: "var(--mt-nao)" },
-  { nome: "Sensor indutivo", funcao: "Detecta peças metálicas", cor: "var(--mt-metal)" },
-  { nome: "Sensor IO-Link", funcao: "Mede a distância e o nível do reservatório", cor: "var(--mt-alerta)" },
-];
-
-// A parte de RA fica em public/ra/index.html (A-Frame + MindAR)
-const enderecoRA = `${import.meta.env.BASE_URL}ra/index.html?api=${encodeURIComponent(API_URL)}`;
+import { API_URL } from '../services/api.js'
 
 export default function RealidadeAumentada() {
-  const [ligado, setLigado] = useState(false);
-
+  const src = `${import.meta.env.BASE_URL}ra/index.html?api=${encodeURIComponent(API_URL)}`
   return (
     <>
-      <Cabecalho titulo="Realidade Aumentada" subtitulo="Aponte a câmera para a mesa e veja os sensores" />
-
+      <h1 className="fs-2">Realidade Aumentada</h1>
+      <p className="text-secondary">Aponte a câmera para a foto da mesa e veja os sensores identificados.</p>
       <div className="row g-3">
-        <div className="col-12 col-xl-8">
-          <div className="card">
-            <div className="card-body">
-              {ligado ? (
-                <iframe
-                  title="Realidade aumentada"
-                  src={enderecoRA}
-                  allow="camera; fullscreen"
-                  style={{ width: "100%", height: "70vh", minHeight: 480, border: 0, borderRadius: 12 }}
-                />
-              ) : (
-                <div className="text-center py-5">
-                  <p className="texto-fraco">A câmera só liga quando você clicar no botão.</p>
-                  <button className="btn btn-metal" onClick={() => setLigado(true)}>
-                    Iniciar câmera
-                  </button>
-                </div>
-              )}
-              <div className="d-flex gap-2 flex-wrap mt-3">
-                {ligado && (
-                  <button className="btn btn-outline-secondary" onClick={() => setLigado(false)}>
-                    Parar câmera
-                  </button>
-                )}
-                <a className="btn btn-outline-secondary d-flex align-items-center" href={enderecoRA} target="_blank" rel="noreferrer">
-                  Abrir em tela cheia
-                </a>
-              </div>
-            </div>
-          </div>
+        <div className="col-12 col-lg-8">
+          <iframe title="Realidade Aumentada" src={src} allow="camera; microphone" className="w-100 border-0 rounded" style={{ height: 520, background: '#1b2128' }} />
         </div>
-
-        <div className="col-12 col-xl-4">
-          <div className="card mb-3">
-            <div className="card-body">
-              <h2 className="h6 mb-3">O que aparece na câmera</h2>
-              {sensores.map((s) => (
-                <div key={s.nome} className="mb-3">
-                  <div style={{ color: s.cor }} className="fw-bold">● {s.nome}</div>
-                  <div className="texto-fraco small">{s.funcao}</div>
-                </div>
-              ))}
-              <div className="texto-fraco small">Cada sensor aparece com uma linha ligada ao cartão, mostrando o valor vindo da API.</div>
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-body">
-              <h2 className="h6 mb-3">Imagem para escanear</h2>
-              <img
-                src={`${import.meta.env.BASE_URL}ra/alvo.jpg`}
-                alt="Foto da mesa usada como alvo da RA"
-                className="img-fluid rounded"
-                onError={(e) => (e.currentTarget.style.display = "none")}
-              />
-              <div className="texto-fraco small mt-2">Se a foto estiver em public/ra/alvo.jpg, ela aparece aqui para você apontar a câmera.</div>
-            </div>
+        <div className="col-12 col-lg-4">
+          <div className="card p-3 h-100">
+            <h2 className="fs-5">Sensores na estação</h2>
+            <p className="mb-2"><strong>Indutivo</strong><br /><span className="text-secondary">Detecta peças metálicas</span></p>
+            <p className="mb-3"><strong>Capacitivo</strong><br /><span className="text-secondary">Detecta peças não metálicas</span></p>
+            <a className="btn btn-dark" href={src} target="_blank" rel="noreferrer">Abrir em tela cheia</a>
           </div>
         </div>
       </div>
     </>
-  );
+  )
 }

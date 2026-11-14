@@ -1,0 +1,9 @@
+body { background: #f4f5f7; color: #14181f; }
+.navbar-rm { background: #14181f; }
+.navbar-rm .nav-link { color: #fff; }
+.navbar-rm .nav-link.active { background: #fdba74; color: #14181f; border-radius: 6px; font-weight: 600; }
+.btn-rm { background: #c2410c; color: #fff; border: 0; }
+.btn-rm:hover { background: #9a3412; color: #fff; }
+.kpi-valor { font-size: 2.5rem; font-weight: 700; }
+.badge-metalica { background: #dbeafe; color: #1d4ed8; }
+.badge-naometalica { background: #ffedd5; color: #9a3412; }

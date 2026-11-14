@@ -1,30 +1,24 @@
-import { Routes, Route } from "react-router-dom";
-import Sidebar from "./components/Sidebar";
-import Dashboard from "./pages/Dashboard";
-import Sensores from "./pages/Sensores";
-import Historico from "./pages/Historico";
-import Analises from "./pages/Analises";
-import Alertas from "./pages/Alertas";
-import Configuracoes from "./pages/Configuracoes";
-import Perfil from "./pages/Perfil";
-import RealidadeAumentada from "./pages/RealidadeAumentada";
+import { Navigate, Route, Routes } from 'react-router-dom'
+import Layout from './components/Layout.jsx'
+import Login from './pages/Login.jsx'
+import Dashboard from './pages/Dashboard.jsx'
+import Historico from './pages/Historico.jsx'
+import RealidadeAumentada from './pages/RealidadeAumentada.jsx'
+
+function Protegida({ children }) {
+  return sessionStorage.getItem('token') ? children : <Navigate to="/login" replace />
+}
 
 export default function App() {
   return (
-    <div className="layout">
-      <Sidebar />
-      <main className="conteudo">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/sensores" element={<Sensores />} />
-          <Route path="/historico" element={<Historico />} />
-          <Route path="/analises" element={<Analises />} />
-          <Route path="/alertas" element={<Alertas />} />
-          <Route path="/realidade-aumentada" element={<RealidadeAumentada />} />
-          <Route path="/configuracoes" element={<Configuracoes />} />
-          <Route path="/perfil" element={<Perfil />} />
-        </Routes>
-      </main>
-    </div>
-  );
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route element={<Protegida><Layout /></Protegida>}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/historico" element={<Historico />} />
+        <Route path="/ra" element={<RealidadeAumentada />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
 }

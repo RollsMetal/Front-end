@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// base './' faz o site funcionar em qualquer nome de repositório no GitHub Pages
+// O GitHub Pages publica este projeto no caminho /Front-end/.
+// Localmente, a aplicação continua sendo servida na raiz.
 export default defineConfig({
   plugins: [react()],
-  base: './',
+  base: process.env.GITHUB_ACTIONS ? '/Front-end/' : '/',
 })

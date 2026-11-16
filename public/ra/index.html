@@ -14,31 +14,96 @@
   <a-entity id="alvo" mindar-image-target="targetIndex: 0"></a-entity>
 </a-scene>
 <script>
-// Alvo: 5712 x 4284 px -> largura 1, altura 0.75. Origem no centro da imagem (x: -0.5 a 0.5, y: -0.375 a 0.375)
-// AJUSTE AQUI: (x, y) = onde o sensor está na foto | (lx, ly) = onde fica o cartão de texto
+// Alvo (foto da mesa): 5712 x 4284 px -> largura 1, altura 0.75.
+// Origem no centro da foto: x vai de -0.5 (esquerda) a 0.5 (direita), y vai de 0.375 (topo) a -0.375 (base).
+// (x, y) = onde o sensor está na foto | (cx, cy) = centro do cartão de texto
 var SENSORES = [
-  { nome: 'Sensor indutivo',   desc: 'Detecta pecas metalicas',     x: -0.25, y: 0.05, lx: -0.3, ly: 0.28 },
-  { nome: 'Sensor capacitivo', desc: 'Detecta pecas nao metalicas', x:  0.25, y: 0.05, lx:  0.3, ly: 0.28 }
+  { id: 'nivel',      nome: 'Sensor de nível',   desc: 'IO-Link · reservatório', x: -0.335, y: 0.13,  cx: -0.335, cy: 0.29 },
+  { id: 'indutivo',   nome: 'Sensor indutivo',   desc: 'Detecta peças metálicas',     x: 0.411,  y: 0.046, cx: 0.0,    cy: 0.29 },
+  { id: 'capacitivo', nome: 'Sensor capacitivo', desc: 'Detecta peças não metálicas', x: 0.394,  y: 0.157, cx: 0.335,  cy: 0.29 }
 ];
+var LARG = 0.31, ALT = 0.15, COR = '#fb923c';
 var API = new URLSearchParams(location.search).get('api') || 'http://localhost:8080';
 var alvo = document.getElementById('alvo');
+
+// Cartão desenhado em canvas: não depende de fonte externa e aceita acentos.
+AFRAME.registerComponent('cartao', {
+  schema: { nome: { default: '' }, desc: { default: '' }, valor: { default: '--' }, alerta: { default: false }, barra: { default: false } },
+  init: function () {
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = 620;
+    this.canvas.height = 300;
+    this.tex = new AFRAME.THREE.CanvasTexture(this.canvas);
+    this.tex.colorSpace = AFRAME.THREE.SRGBColorSpace;
+  },
+  update: function () {
+    var d = this.data, c = this.canvas, g = c.getContext('2d');
+    if (d.barra) {
+      c.width = 1000;
+      c.height = 120;
+      g.fillStyle = d.alerta ? '#b91c1c' : '#14181f';
+      g.fillRect(0, 0, c.width, c.height);
+      g.fillStyle = '#ffffff';
+      g.font = 'bold 54px Arial, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(d.nome, c.width / 2, c.height / 2);
+      this.tex.needsUpdate = true;
+      var m = this.el.getObject3D('mesh');
+      if (m && m.material.map !== this.tex) { m.material.map = this.tex; m.material.needsUpdate = true; }
+      return;
+    }
+    g.clearRect(0, 0, c.width, c.height);
+    g.fillStyle = '#ffffff';
+    g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = d.alerta ? '#b91c1c' : '#fb923c';
+    g.fillRect(0, 0, 18, c.height);
+    g.textBaseline = 'middle';
+    g.fillStyle = '#14181f';
+    g.font = 'bold 50px Arial, sans-serif';
+    g.fillText(d.nome, 40, 58);
+    g.fillStyle = '#4b5563';
+    g.font = '36px Arial, sans-serif';
+    g.fillText(d.desc, 40, 146);
+    g.fillStyle = d.alerta ? '#b91c1c' : '#c2410c';
+    g.font = 'bold 58px Arial, sans-serif';
+    g.fillText(d.valor, 40, 236);
+    this.tex.needsUpdate = true;
+    var mesh = this.el.getObject3D('mesh');
+    if (mesh && mesh.material.map !== this.tex) {
+      mesh.material.map = this.tex;
+      mesh.material.needsUpdate = true;
+    }
+  }
+});
+
+function linha(x1, y1, x2, y2) {
+  var dx = x2 - x1, dy = y2 - y1;
+  var tam = Math.sqrt(dx * dx + dy * dy);
+  var ang = Math.atan2(dy, dx) * 180 / Math.PI;
+  return '<a-plane shader="flat" color="' + COR + '" position="' + (x1 + x2) / 2 + ' ' + (y1 + y2) / 2 + ' 0.015" rotation="0 0 ' + ang + '" width="' + tam + '" height="0.006"></a-plane>';
+}
 
 SENSORES.forEach(function (s) {
   var g = document.createElement('a-entity');
   g.innerHTML =
-    '<a-circle position="' + s.x + ' ' + s.y + ' 0.01" radius="0.025" color="#fb923c"></a-circle>' +
-    '<a-entity line="start: ' + s.x + ' ' + s.y + ' 0.01; end: ' + s.lx + ' ' + (s.ly - 0.06) + ' 0.01; color: #fb923c"></a-entity>' +
-    '<a-plane position="' + s.lx + ' ' + s.ly + ' 0.02" width="0.42" height="0.12" color="#ffffff"></a-plane>' +
-    '<a-text value="' + s.nome + '" position="' + (s.lx - 0.19) + ' ' + (s.ly + 0.025) + ' 0.03" width="0.8" color="#14181f" align="left"></a-text>' +
-    '<a-text value="' + s.desc + '" position="' + (s.lx - 0.19) + ' ' + (s.ly - 0.025) + ' 0.03" width="0.6" color="#374151" align="left"></a-text>';
+    linha(s.x, s.y, s.cx, s.cy - ALT / 2) +
+    (s.id === 'nivel'
+      ? '<a-ring shader="flat" color="' + COR + '" position="' + s.x + ' ' + s.y + ' 0.016" radius-inner="0.02" radius-outer="0.03"></a-ring>'
+      : '<a-circle shader="flat" color="#ffffff" position="' + s.x + ' ' + s.y + ' 0.016" radius="0.03"></a-circle>' +
+        '<a-circle shader="flat" color="' + COR + '" position="' + s.x + ' ' + s.y + ' 0.017" radius="0.022"></a-circle>') +
+    '<a-plane id="c-' + s.id + '" shader="flat" transparent="true" position="' + s.cx + ' ' + s.cy + ' 0.02" width="' + LARG + '" height="' + ALT + '" cartao="nome: ' + s.nome + '; desc: ' + s.desc + '; valor: --"></a-plane>';
   alvo.appendChild(g);
 });
 
-var painel = document.createElement('a-entity');
-painel.innerHTML =
-  '<a-plane position="0 -0.27 0.02" width="0.9" height="0.16" color="#14181f" opacity="0.85"></a-plane>' +
-  '<a-text id="txt" value="Aguardando dados da API" position="0 -0.27 0.03" width="1.2" color="#ffffff" align="center"></a-text>';
-alvo.appendChild(painel);
+var rodape = document.createElement('a-entity');
+rodape.innerHTML = '<a-plane id="c-status" shader="flat" transparent="true" position="0 -0.335 0.02" width="0.5" height="0.06" cartao="nome: Aguardando dados da API; barra: true"></a-plane>';
+alvo.appendChild(rodape);
+
+function cartao(id, nome, desc, valor, alerta) {
+  var el = document.getElementById(id);
+  if (el) el.setAttribute('cartao', { nome: nome, desc: desc, valor: valor, alerta: !!alerta, barra: id === 'c-status' });
+}
 
 function quartil(v, q) {
   var o = v.slice().sort(function (a, b) { return a - b; });
@@ -58,13 +123,19 @@ function atualizar() {
     });
     var lim = niveis.length >= 4 ? quartil(niveis, 0.75) + 1.5 * (quartil(niveis, 0.75) - quartil(niveis, 0.25)) : null;
     var alerta = lim !== null && ultimo !== null && ultimo > lim;
-    var txt = document.getElementById('txt');
-    txt.setAttribute('value', 'Metalicas: ' + met + '  |  Nao metalicas: ' + (dados.length - met) + '\nNivel: ' + (ultimo === null ? '--' : ultimo.toFixed(1)) + '%' + (alerta ? '  ALERTA' : ''));
-    txt.setAttribute('color', alerta ? '#fca5a5' : '#ffffff');
-  }).catch(function () {});
+    cartao('c-indutivo', 'Sensor indutivo', 'Detecta peças metálicas', 'Metálicas: ' + met, false);
+    cartao('c-capacitivo', 'Sensor capacitivo', 'Detecta peças não metálicas', 'Não metálicas: ' + (dados.length - met), false);
+    cartao('c-nivel', 'Sensor de nível', alerta ? 'ALERTA: nível acima do limite' : 'IO-Link · reservatório', 'Nível: ' + (ultimo === null ? '--' : ultimo.toFixed(1).replace('.', ',')) + '%', alerta);
+    cartao('c-status', 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR'), '', '', false);
+  }).catch(function () {
+    cartao('c-status', 'Sem conexão com a API', '', '', true);
+  });
 }
-atualizar();
-setInterval(atualizar, 3000);
+// espera a cena carregar para criar os cartões antes da primeira atualização
+document.querySelector('a-scene').addEventListener('loaded', function () {
+  atualizar();
+  setInterval(atualizar, 3000);
+});
 </script>
 </body>
 </html>

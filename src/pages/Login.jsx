@@ -10,6 +10,12 @@ export default function Login() {
 
   async function enviar(e) {
     e.preventDefault()
+    // usuário fixo para entrar sem depender do back-end
+    if (email === 'admin' && senha === 'rollsmetal') {
+      sessionStorage.setItem('token', 'local')
+      navigate('/')
+      return
+    }
     try {
       const { token } = await entrar(email, senha)
       sessionStorage.setItem('token', token)

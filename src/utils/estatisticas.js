@@ -28,6 +28,27 @@ export function desvioPadrao(v) {
   return Math.sqrt(v.reduce((s, x) => s + (x - m) ** 2, 0) / (v.length - 1))
 }
 
+export const minimo = (v) => (v.length ? Math.min(...v) : null)
+export const maximo = (v) => (v.length ? Math.max(...v) : null)
+export const variancia = (v) => (v.length < 2 ? null : desvioPadrao(v) ** 2)
+
+export function coefVariacao(v) {
+  const m = media(v)
+  const d = desvioPadrao(v)
+  return m && d !== null ? (d / m) * 100 : null
+}
+
+// Distribuição de frequências do nível (0-100%) em classes de 10 em 10
+export function distribuicao(v) {
+  const fi = Array(10).fill(0)
+  v.forEach((x) => { fi[Math.min(9, Math.max(0, Math.floor(x / 10)))]++ })
+  let acum = 0
+  return fi.map((f, i) => {
+    acum += f
+    return { classe: `${i * 10} |- ${(i + 1) * 10}`, fi: f, fr: v.length ? (f / v.length) * 100 : 0, fac: acum }
+  })
+}
+
 // Critério de alerta: Q3 + 1,5 × (Q3 − Q1)
 export function limiteAlerta(v) {
   if (v.length < 4) return null

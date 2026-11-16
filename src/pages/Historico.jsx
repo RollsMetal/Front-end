@@ -1,9 +1,19 @@
 import { useState } from 'react'
 import { useLeituras } from '../hooks.js'
-import { BoxPlot, Histograma, LinhaNivel, Proporcao } from '../components/Graficos.jsx'
-import { desvioPadrao, fmt, fmtData, limiteAlerta, media, mediana, moda, quartil } from '../utils/estatisticas.js'
+import { BoxPlot, Histograma, LinhaNivel, PecasPorHora, Proporcao } from '../components/Graficos.jsx'
+import { coefVariacao, desvioPadrao, distribuicao, fmt, fmtData, limiteAlerta, maximo, media, mediana, minimo, moda, quartil, variancia } from '../utils/estatisticas.js'
 
-const PERIODOS = { 'Última hora': 1, 'Últimas 24 horas': 24, 'Últimos 7 dias': 168 }
+const PERIODOS = { 'Última hora': 1, 'Últimas 24 horas': 24, 'Últimos 7 dias': 168, 'Todo o período': Infinity }
+
+function exportarCsv(lista) {
+  const linhas = lista.map((l) => [fmtData(l.horario), l.id ?? '', l.metalica ? 'Metálica' : 'Não metálica', l.sensor, String(l.nivel).replace('.', ',')].join(';'))
+  const csv = '\uFEFF' + ['Horário;Peça;Tipo;Sensor;Nível (%)', ...linhas].join('\n')
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+  a.download = 'leituras-rollsmetal.csv'
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
 
 function Stat({ nome, valor }) {
   return (
@@ -71,6 +81,12 @@ export default function Historico() {
         <Stat nome="Desvio padrão" valor={fmt(desvioPadrao(niveis))} />
         <Stat nome="Quartil 1 (Q1)" valor={fmt(quartil(niveis, 0.25))} />
         <Stat nome="Quartil 3 (Q3)" valor={fmt(quartil(niveis, 0.75))} />
+        <Stat nome="Mínimo" valor={fmt(minimo(niveis))} />
+        <Stat nome="Máximo" valor={fmt(maximo(niveis))} />
+        <Stat nome="Amplitude" valor={fmt(maximo(niveis) === null ? null : maximo(niveis) - minimo(niveis))} />
+        <Stat nome="Variância" valor={fmt(variancia(niveis))} />
+        <Stat nome="Coef. de variação" valor={`${fmt(coefVariacao(niveis))}%`} />
+        <Stat nome="P10 / P90" valor={`${fmt(quartil(niveis, 0.1), 0)} / ${fmt(quartil(niveis, 0.9), 0)}`} />
       </div>
 
       <div className="row g-3 mb-4">
@@ -78,6 +94,19 @@ export default function Historico() {
         <div className="col-12 col-lg-6"><div className="card p-3"><h3 className="fs-5">Histograma do nível</h3><Histograma valores={niveis} /></div></div>
         <div className="col-12 col-lg-6"><div className="card p-3"><h3 className="fs-5">Boxplot do nível</h3><BoxPlot valores={niveis} /></div></div>
         <div className="col-12 col-lg-6"><div className="card p-3"><h3 className="fs-5">Metálicas x não metálicas</h3><Proporcao metalicas={met} naoMetalicas={lista.length - met} /></div></div>
+        <div className="col-12"><div className="card p-3"><h3 className="fs-5">Peças por hora (azul: metálicas, laranja: não metálicas)</h3><PecasPorHora leituras={lista} /></div></div>
+      </div>
+
+      <div className="card p-3 mb-4 table-responsive">
+        <h3 className="fs-5">Distribuição de frequências do nível</h3>
+        <table className="table table-sm align-middle mb-0">
+          <thead><tr><th>Classe (%)</th><th>Frequência (fi)</th><th>Frequência relativa (fr)</th><th>Freq. acumulada (Fac)</th></tr></thead>
+          <tbody>
+            {distribuicao(niveis).map((c) => (
+              <tr key={c.classe}><td>{c.classe}</td><td>{c.fi}</td><td>{fmt(c.fr)}%</td><td>{c.fac}</td></tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <div className="card p-3 mb-4">
@@ -88,7 +117,10 @@ export default function Historico() {
       </div>
 
       <div className="card p-3 table-responsive">
-        <h3 className="fs-5">Leituras registradas</h3>
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <h3 className="fs-5 mb-0">Leituras registradas</h3>
+          <button className="btn btn-outline-dark btn-sm" onClick={() => exportarCsv(lista)} disabled={!lista.length}>Exportar CSV</button>
+        </div>
         <table className="table align-middle">
           <thead>
             <tr><th>Horário</th><th>Peça</th><th>Tipo</th><th>Sensor</th><th>Nível do reservatório</th></tr>

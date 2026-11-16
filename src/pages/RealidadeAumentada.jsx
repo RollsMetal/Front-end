@@ -14,7 +14,8 @@ export default function RealidadeAumentada() {
           <div className="card p-3 h-100">
             <h2 className="fs-5">Sensores na estação</h2>
             <p className="mb-2"><strong>Indutivo</strong><br /><span className="text-secondary">Detecta peças metálicas</span></p>
-            <p className="mb-3"><strong>Capacitivo</strong><br /><span className="text-secondary">Detecta peças não metálicas</span></p>
+            <p className="mb-2"><strong>Capacitivo</strong><br /><span className="text-secondary">Detecta peças não metálicas</span></p>
+            <p className="mb-3"><strong>Nível (IO-Link)</strong><br /><span className="text-secondary">Mede o nível do reservatório</span></p>
             <a className="btn btn-dark" href={src} target="_blank" rel="noreferrer">Abrir em tela cheia</a>
           </div>
         </div>

@@ -1,4 +1,4 @@
-const baseUrl = (process.env.VITE_API_URL || 'http://10.110.12.69:8080').replace(/\/$/, '')
+const baseUrl = (process.env.VITE_API_URL || 'http://localhost:8080').replace(/\/$/, '')
 const browserOrigin = process.env.FE_ORIGIN || 'http://localhost:5173'
 const failures = []
 

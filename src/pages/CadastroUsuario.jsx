@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { cadastrarUsuario } from '../services/api.js'
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -59,7 +59,7 @@ export default function CadastroUsuario() {
         senha: formulario.senha,
       })
       setFormulario((atual) => ({ ...atual, senha: '', confirmacao: '' }))
-      navigate('/dashboard', { replace: true })
+      navigate('/login', { replace: true })
     } catch (error) {
       if (error.status === 409) {
         setErroEnvio('Este e-mail já está cadastrado. Confira o endereço ou use outro e-mail.')
@@ -99,6 +99,9 @@ export default function CadastroUsuario() {
         <button type="submit" className="btn btn-rm btn-lg mt-2" disabled={enviando}>
           {enviando ? <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />Cadastrando…</> : 'Cadastrar usuário'}
         </button>
+        <p className="text-secondary text-center small mt-3 mb-0">
+          Já tem cadastro? <Link to="/login">Entrar</Link>
+        </p>
       </form>
     </div>
   )

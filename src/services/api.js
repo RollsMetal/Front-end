@@ -1,4 +1,4 @@
-const DEFAULT_API_URL = 'http://10.110.12.69:8080'
+const DEFAULT_API_URL = 'http://localhost:8080'
 
 export const API_URL = (import.meta.env.VITE_API_URL || DEFAULT_API_URL).replace(/\/$/, '')
 // Em desenvolvimento, todas as chamadas passam pelo proxy do Vite para evitar CORS.
@@ -15,7 +15,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request(path, options = {}) {
+async function request(path, options = {}, expectedStatus) {
   const url = `${API_BASE_URL}${path}`
   let response
   try {
@@ -27,7 +27,7 @@ async function request(path, options = {}) {
   const raw = await response.text()
   let body
   try { body = raw ? JSON.parse(raw) : null } catch { body = raw }
-  if (!response.ok) {
+  if (!response.ok || (expectedStatus !== undefined && response.status !== expectedStatus)) {
     const message = body && typeof body === 'object'
       ? [body.message, ...Object.values(body.validationErrors ?? {})].filter(Boolean).join(' ')
       : ''
@@ -124,4 +124,12 @@ export function cadastrarUsuario({ nome, email, senha }) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ nome: nome.trim(), email: email.trim(), senha }),
   })
+}
+
+export function loginUsuario({ email, senha }) {
+  return request('/api/usuarios/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, senha }),
+  }, 200)
 }

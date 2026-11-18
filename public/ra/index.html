@@ -23,7 +23,7 @@ var SENSORES = [
   { id: 'capacitivo', nome: 'Sensor capacitivo', desc: 'Detecta peças não metálicas', x: 0.394,  y: 0.157, cx: 0.335,  cy: 0.29 }
 ];
 var LARG = 0.31, ALT = 0.15, COR = '#fb923c';
-var API = new URLSearchParams(location.search).get('api') || 'http://localhost:8080';
+var API = new URLSearchParams(location.search).get('api') || 'https://rollmetal-backend.onrender.com';
 var SERIAL = new URLSearchParams(location.search).get('serial') || '';
 var alvo = document.getElementById('alvo');
 

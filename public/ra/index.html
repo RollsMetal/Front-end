@@ -23,7 +23,8 @@ var SENSORES = [
   { id: 'capacitivo', nome: 'Sensor capacitivo', desc: 'Detecta peças não metálicas', x: 0.394,  y: 0.157, cx: 0.335,  cy: 0.29 }
 ];
 var LARG = 0.31, ALT = 0.15, COR = '#fb923c';
-var API = new URLSearchParams(location.search).get('api') || 'http://localhost:8080';
+var API = new URLSearchParams(location.search).get('api') || 'http://10.110.12.69:8080';
+var SERIAL = new URLSearchParams(location.search).get('serial') || '';
 var alvo = document.getElementById('alvo');
 
 // Cartão desenhado em canvas: não depende de fonte externa e aceita acentos.
@@ -112,24 +113,30 @@ function quartil(v, q) {
 }
 
 function atualizar() {
-  fetch(API + '/leituras').then(function (r) { return r.json(); }).then(function (dados) {
-    var met = 0, niveis = [], ultimo = null, ultimoT = 0;
-    dados.forEach(function (l) {
-      var t = String(l.tipo || l.tipoPeca || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      if (t.indexOf('METAL') >= 0 && t.indexOf('NAO') < 0) met++;
-      var n = Number(l.nivelReservatorio != null ? l.nivelReservatorio : l.nivel);
-      var h = new Date(l.horario || l.dataHora || l.timestamp).getTime() || 0;
-      if (!isNaN(n)) { niveis.push(n); if (h >= ultimoT) { ultimoT = h; ultimo = n; } }
+  if (!SERIAL) {
+    fetch(API + '/api/esteiras').then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (esteiras) {
+      if (!esteiras.length) throw new Error();
+      SERIAL = esteiras[0].numeroSerial;
+      atualizar();
+    }).catch(function () { cartao('c-status', 'Cadastre ou selecione uma esteira', '', '', true); });
+    return;
+  }
+  var caminho = '/api/esteiras/' + encodeURIComponent(SERIAL);
+  Promise.all([
+    fetch(API + caminho + '/sensores').then(function (r) { if (!r.ok) throw new Error(); return r.json(); }),
+    fetch(API + caminho + '/leituras?' + new URLSearchParams({ pagina: '0', tamanho: '100' })).then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+  ]).then(function (respostas) {
+    var sensores = respostas[0], pagina = respostas[1], dados = pagina.content || [];
+    var contagem = { METAL: 0, PLASTICO: 0, SEM_MATERIAL: 0, DESCONHECIDO: 0 };
+    dados.forEach(function (l) { contagem[l.tipoMaterial] = (contagem[l.tipoMaterial] || 0) + 1; });
+    var rotulos = ['c-nivel', 'c-indutivo', 'c-capacitivo'];
+    rotulos.forEach(function (id, i) {
+      var s = sensores[i];
+      cartao(id, s ? 'Porta ' + s.porta + ' · ' + s.tipoSensor : 'Sensor não cadastrado', s ? 'Modelo ' + s.modelo : 'Sem dados de sensor', s ? 'Sensor #' + s.id : '--', false);
     });
-    var lim = niveis.length >= 4 ? quartil(niveis, 0.75) + 1.5 * (quartil(niveis, 0.75) - quartil(niveis, 0.25)) : null;
-    var alerta = lim !== null && ultimo !== null && ultimo > lim;
-    cartao('c-indutivo', 'Sensor indutivo', 'Detecta peças metálicas', 'Metálicas: ' + met, false);
-    cartao('c-capacitivo', 'Sensor capacitivo', 'Detecta peças não metálicas', 'Não metálicas: ' + (dados.length - met), false);
-    cartao('c-nivel', 'Sensor de nível', alerta ? 'ALERTA: nível acima do limite' : 'IO-Link · reservatório', 'Nível: ' + (ultimo === null ? '--' : ultimo.toFixed(1).replace('.', ',')) + '%', alerta);
-    cartao('c-status', 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR'), '', '', false);
-  }).catch(function () {
-    cartao('c-status', 'Sem conexão com a API', '', '', true);
-  });
+    cartao('c-status', SERIAL + ' · ' + pagina.totalElements + ' leituras · ' + new Date().toLocaleTimeString('pt-BR'),
+      'Página atual: ' + dados.length + ' · Metal: ' + contagem.METAL + ' · Plástico: ' + contagem.PLASTICO, '', false);
+  }).catch(function () { cartao('c-status', 'Sem conexão com a API', '', '', true); });
 }
 // espera a cena carregar para criar os cartões antes da primeira atualização
 document.querySelector('a-scene').addEventListener('loaded', function () {

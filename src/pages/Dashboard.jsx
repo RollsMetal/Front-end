@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useEsteiras, useLeituras, useSensores } from '../hooks.js'
 import { cadastrarEsteira } from '../services/api.js'
 import { PecasPorHora, Proporcao } from '../components/Graficos.jsx'
+import { ChartCard, HourlyStatistics, ProportionStatistics } from '../components/Estatisticas.jsx'
 import { fmtData } from '../utils/estatisticas.js'
 
 function tipoSensorLegivel(tipo) {
@@ -82,8 +83,16 @@ export default function Dashboard() {
           {sensores.length ? <div className="d-flex flex-wrap gap-2">{sensores.map((sensor) => <span className="badge text-bg-light border p-2" key={sensor.id}>Porta {sensor.porta}: {tipoSensorLegivel(sensor.tipoSensor)}{sensor.modelo ? ` · ${sensor.modelo}` : ''}</span>)}</div> : <p className="text-secondary mb-0">Nenhum sensor retornado para esta esteira.</p>}
         </div>
         <div className="row g-3">
-          <div className="col-12 col-lg-6"><div className="card p-3 h-100"><h2 className="fs-5">Materiais na página atual</h2><Proporcao metalicas={metalicas} naoMetalicas={plasticos + semMaterial + desconhecidos} /></div></div>
-          <div className="col-12 col-lg-6"><div className="card p-3 h-100"><h2 className="fs-5">Leituras por hora</h2><PecasPorHora leituras={leituras.map((leitura) => ({ ...leitura, metalica: leitura.tipoMaterial === 'METAL' }))} /></div></div>
+          <div className="col-12 col-lg-6">
+            <ChartCard title="Materiais na página atual" statistics={<ProportionStatistics metal={metalicas} other={plasticos + semMaterial + desconhecidos} />}>
+              <Proporcao metalicas={metalicas} naoMetalicas={plasticos + semMaterial + desconhecidos} />
+            </ChartCard>
+          </div>
+          <div className="col-12 col-lg-6">
+            <ChartCard title="Leituras por hora" statistics={<HourlyStatistics readings={leituras} />}>
+              <PecasPorHora leituras={leituras} />
+            </ChartCard>
+          </div>
         </div>
       </>}
     </>

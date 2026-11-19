@@ -1,4 +1,5 @@
 import { limiteAlerta, quartil } from '../utils/estatisticas.js'
+import { countReadingsByHour } from '../utils/leituras.js'
 
 const W = 400, H = 180, PL = 34, PR = 10, PT = 10, PB = 30
 const x0 = PL, x1 = W - PR, y0 = H - PB, y1 = PT
@@ -79,34 +80,23 @@ export function Proporcao({ metalicas, naoMetalicas }) {
   )
 }
 
-// Peças por hora (empilhado): leituras = lista já normalizada (com horario e metalica)
+// Leituras por hora (empilhado): leituras = lista já normalizada (com horario e metalica)
 export function PecasPorHora({ leituras }) {
-  const grupos = {}
-  leituras.forEach((l) => {
-    const h = new Date(l.horario).setMinutes(0, 0, 0)
-    if (Number.isNaN(h)) return
-    grupos[h] = grupos[h] || { met: 0, nao: 0 }
-    if (l.metalica) grupos[h].met++
-    else grupos[h].nao++
-  })
-  const horas = Object.keys(grupos).map(Number).sort((a, b) => a - b).slice(-12)
-  const max = Math.max(...horas.map((h) => grupos[h].met + grupos[h].nao), 1)
+  const horas = countReadingsByHour(leituras)
+  const max = Math.max(...horas.map((h) => h.metal + h.other), 1)
   const larg = Math.min((x1 - x0) / Math.max(horas.length, 1), 60)
   const alt = (n) => (n / max) * (y0 - y1)
   return (
     <Moldura vazio={!horas.length}>
       <text x="4" y={y1 + 4} fontSize="10" fill="#4b5563">{max}</text>
       <text x="14" y={y0} fontSize="10" fill="#4b5563">0</text>
-      {horas.map((h, i) => {
-        const g = grupos[h]
-        return (
-          <g key={h}>
-            <rect x={x0 + i * larg + 3} y={y0 - alt(g.met)} width={larg - 6} height={alt(g.met)} fill="#1d4ed8" />
-            <rect x={x0 + i * larg + 3} y={y0 - alt(g.met) - alt(g.nao)} width={larg - 6} height={alt(g.nao)} fill="#c2410c" />
-            <text x={x0 + i * larg + larg / 2} y={H - 10} fontSize="9" textAnchor="middle" fill="#4b5563">{new Date(h).getHours()}h</text>
-          </g>
-        )
-      })}
+      {horas.map((g, i) => (
+        <g key={g.hour}>
+          <rect x={x0 + i * larg + 3} y={y0 - alt(g.metal)} width={larg - 6} height={alt(g.metal)} fill="#1d4ed8" />
+          <rect x={x0 + i * larg + 3} y={y0 - alt(g.metal) - alt(g.other)} width={larg - 6} height={alt(g.other)} fill="#c2410c" />
+          <text x={x0 + i * larg + larg / 2} y={H - 10} fontSize="9" textAnchor="middle" fill="#4b5563">{new Date(g.hour).getHours()}h</text>
+        </g>
+      ))}
     </Moldura>
   )
 }

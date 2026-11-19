@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useEsteiras, useLeituras, useSensores } from '../hooks.js'
 import { fmtData } from '../utils/estatisticas.js'
 import { PecasPorHora, Proporcao } from '../components/Graficos.jsx'
+import { ChartCard, HourlyStatistics, ProportionStatistics } from '../components/Estatisticas.jsx'
 
 function paraIsoComOffset(valorLocal) {
   if (!valorLocal) return ''
@@ -87,8 +88,16 @@ export default function Historico() {
         <Resumo titulo="Tamanho da página" valor={size} />
       </div>
       <div className="row g-3 mb-3">
-        <div className="col-12 col-lg-6"><div className="card p-3 h-100"><h2 className="fs-5">Materiais nesta página</h2><Proporcao metalicas={metalicas} naoMetalicas={leituras.length - metalicas} /></div></div>
-        <div className="col-12 col-lg-6"><div className="card p-3 h-100"><h2 className="fs-5">Leituras por hora</h2><PecasPorHora leituras={leituras.map((leitura) => ({ ...leitura, metalica: leitura.tipoMaterial === 'METAL' }))} /></div></div>
+        <div className="col-12 col-lg-6">
+            <ChartCard title="Materiais nesta página" statistics={<ProportionStatistics metal={metalicas} other={leituras.length - metalicas} />}>
+              <Proporcao metalicas={metalicas} naoMetalicas={leituras.length - metalicas} />
+            </ChartCard>
+          </div>
+        <div className="col-12 col-lg-6">
+            <ChartCard title="Leituras por hora" statistics={<HourlyStatistics readings={leituras} />}>
+              <PecasPorHora leituras={leituras} />
+            </ChartCard>
+          </div>
       </div>
       <div className="card p-3 table-responsive">
         <div className="d-flex justify-content-between align-items-center mb-2"><h2 className="fs-5 mb-0">Registros retornados</h2><button className="btn btn-outline-dark btn-sm" onClick={() => exportarCsv(leituras)} disabled={!leituras.length}>Exportar página CSV</button></div>

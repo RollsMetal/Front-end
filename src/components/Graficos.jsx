@@ -67,13 +67,27 @@ export function BoxPlot({ valores }) {
   )
 }
 
-export function Proporcao({ metalicas, naoMetalicas }) {
+// Ativa o elemento com Enter/Espaço, para quem navega por teclado
+const onActivateKey = (action) => (event) => {
+  if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); action() }
+}
+
+// selecionado: 'metal' | 'other' | null; onSelecionar recebe a chave do lado clicado
+export function Proporcao({ metalicas, naoMetalicas, selecionado = null, onSelecionar }) {
   const total = metalicas + naoMetalicas
   const wm = total ? ((x1 - x0) * metalicas) / total : 0
+  const lado = (chave, x, largura, cor, rotulo) => (
+    <rect
+      className="chart-clickable chart-bar" role="button" tabIndex={0} aria-label={rotulo}
+      x={x} y="60" width={largura} height="50" fill={cor}
+      stroke={selecionado === chave ? '#14181f' : 'none'} strokeWidth="3"
+      onClick={() => onSelecionar?.(chave)} onKeyDown={onActivateKey(() => onSelecionar?.(chave))}
+    />
+  )
   return (
     <Moldura vazio={!total}>
-      <rect x={x0} y="60" width={wm} height="50" fill="#1d4ed8" />
-      <rect x={x0 + wm} y="60" width={x1 - x0 - wm} height="50" fill="#c2410c" />
+      {lado('metal', x0, wm, '#1d4ed8', `Metálicas: ${metalicas}`)}
+      {lado('other', x0 + wm, x1 - x0 - wm, '#c2410c', `Não metálicas: ${naoMetalicas}`)}
       <text x={x0} y="50" fontSize="12" fill="#1d4ed8">Metálicas: {metalicas}</text>
       <text x={x1} y="50" fontSize="12" fill="#9a3412" textAnchor="end">Não metálicas: {naoMetalicas}</text>
     </Moldura>
@@ -81,7 +95,8 @@ export function Proporcao({ metalicas, naoMetalicas }) {
 }
 
 // Leituras por hora (empilhado): leituras = lista já normalizada (com horario e metalica)
-export function PecasPorHora({ leituras }) {
+// horaSelecionada: timestamp da hora destacada; onSelecionarHora recebe o timestamp da coluna clicada
+export function PecasPorHora({ leituras, horaSelecionada = null, onSelecionarHora }) {
   const horas = countReadingsByHour(leituras)
   const max = Math.max(...horas.map((h) => h.metal + h.other), 1)
   const larg = Math.min((x1 - x0) / Math.max(horas.length, 1), 60)
@@ -90,13 +105,22 @@ export function PecasPorHora({ leituras }) {
     <Moldura vazio={!horas.length}>
       <text x="4" y={y1 + 4} fontSize="10" fill="#4b5563">{max}</text>
       <text x="14" y={y0} fontSize="10" fill="#4b5563">0</text>
-      {horas.map((g, i) => (
-        <g key={g.hour}>
-          <rect x={x0 + i * larg + 3} y={y0 - alt(g.metal)} width={larg - 6} height={alt(g.metal)} fill="#1d4ed8" />
-          <rect x={x0 + i * larg + 3} y={y0 - alt(g.metal) - alt(g.other)} width={larg - 6} height={alt(g.other)} fill="#c2410c" />
-          <text x={x0 + i * larg + larg / 2} y={H - 10} fontSize="9" textAnchor="middle" fill="#4b5563">{new Date(g.hour).getHours()}h</text>
-        </g>
-      ))}
+      {horas.map((g, i) => {
+        const selecionar = () => onSelecionarHora?.(g.hour)
+        return (
+          <g
+            key={g.hour} className="chart-clickable" role="button" tabIndex={0}
+            aria-label={`${new Date(g.hour).getHours()}h: ${g.metal + g.other} leituras`}
+            onClick={selecionar} onKeyDown={onActivateKey(selecionar)}
+          >
+            {/* Área de clique cobrindo a coluna inteira, para barras baixas também serem fáceis de acertar */}
+            <rect className={`chart-hit${horaSelecionada === g.hour ? ' is-selected' : ''}`} x={x0 + i * larg} y={y1} width={larg} height={y0 - y1} />
+            <rect x={x0 + i * larg + 3} y={y0 - alt(g.metal)} width={larg - 6} height={alt(g.metal)} fill="#1d4ed8" />
+            <rect x={x0 + i * larg + 3} y={y0 - alt(g.metal) - alt(g.other)} width={larg - 6} height={alt(g.other)} fill="#c2410c" />
+            <text x={x0 + i * larg + larg / 2} y={H - 10} fontSize="9" textAnchor="middle" fill="#4b5563">{new Date(g.hour).getHours()}h</text>
+          </g>
+        )
+      })}
     </Moldura>
   )
 }

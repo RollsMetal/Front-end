@@ -233,3 +233,34 @@ export function describeProportion(successes, total) {
     oddsRatio: failures ? successes / failures : null,
   }
 }
+
+/**
+ * Situa uma observação dentro da amostra (usado ao clicar em uma barra do gráfico).
+ * @param {number[]} values Amostra completa (inclui a observação).
+ * @param {number} value A observação clicada.
+ * @returns {Object|null} Desvio da média/mediana, z-score, posição no ranking, percentil e se é outlier.
+ */
+export function describeObservation(values, value) {
+  if (!values.length) return null
+  const n = values.length
+  const mean = media(values)
+  const sd = desvioPadrao(values)
+  const q1 = quartil(values, 0.25)
+  const q3 = quartil(values, 0.75)
+  const hasFences = n >= MIN_SAMPLE_FOR_FENCES
+  const lowerFence = q1 - IQR_FENCE_MULTIPLIER * (q3 - q1)
+  const upperFence = q3 + IQR_FENCE_MULTIPLIER * (q3 - q1)
+
+  return {
+    value,
+    mean,
+    deviationFromMean: value - mean,
+    deviationFromMedian: value - mediana(values),
+    zScore: sd ? (value - mean) / sd : null,
+    // posição 1 = maior valor; empates dividem a mesma posição
+    rank: values.filter((x) => x > value).length + 1,
+    sampleSize: n,
+    percentileRank: (values.filter((x) => x <= value).length / n) * 100,
+    isOutlier: hasFences ? value < lowerFence || value > upperFence : null,
+  }
+}

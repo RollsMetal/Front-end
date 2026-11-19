@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useEsteiras, useLeituras, useSensores } from '../hooks.js'
 import { cadastrarEsteira } from '../services/api.js'
-import { PecasPorHora, Proporcao } from '../components/Graficos.jsx'
-import { ChartCard, HourlyStatistics, ProportionStatistics } from '../components/Estatisticas.jsx'
+import { HourlyChart, ProportionChart } from '../components/Estatisticas.jsx'
 import { fmtData } from '../utils/estatisticas.js'
 
 function tipoSensorLegivel(tipo) {
@@ -84,14 +83,10 @@ export default function Dashboard() {
         </div>
         <div className="row g-3">
           <div className="col-12 col-lg-6">
-            <ChartCard title="Materiais na página atual" statistics={<ProportionStatistics metal={metalicas} other={plasticos + semMaterial + desconhecidos} />}>
-              <Proporcao metalicas={metalicas} naoMetalicas={plasticos + semMaterial + desconhecidos} />
-            </ChartCard>
+            <ProportionChart title="Materiais na página atual" metal={metalicas} other={plasticos + semMaterial + desconhecidos} />
           </div>
           <div className="col-12 col-lg-6">
-            <ChartCard title="Leituras por hora" statistics={<HourlyStatistics readings={leituras} />}>
-              <PecasPorHora leituras={leituras} />
-            </ChartCard>
+            <HourlyChart title="Leituras por hora" readings={leituras} />
           </div>
         </div>
       </>}

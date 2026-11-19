@@ -7,3 +7,12 @@ body { background: #f4f5f7; color: #14181f; }
 .kpi-valor { font-size: 2.5rem; font-weight: 700; }
 .badge-metalica { background: #dbeafe; color: #1d4ed8; }
 .badge-naometalica { background: #ffedd5; color: #9a3412; }
+
+/* Elementos clicáveis dos gráficos */
+.chart-clickable { cursor: pointer; outline: none; }
+.chart-hit { fill: transparent; }
+.chart-clickable:hover .chart-hit { fill: #ffedd5; }
+.chart-clickable:focus-visible .chart-hit { stroke: #c2410c; }
+.chart-clickable .chart-hit.is-selected { fill: #fed7aa; }
+.chart-bar:hover { opacity: .85; }
+.chart-bar:focus-visible { stroke: #14181f; stroke-width: 3; }

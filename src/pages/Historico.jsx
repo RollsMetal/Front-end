@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useEsteiras, useLeituras, useSensores } from '../hooks.js'
 import { fmtData } from '../utils/estatisticas.js'
-import { PecasPorHora, Proporcao } from '../components/Graficos.jsx'
-import { ChartCard, HourlyStatistics, ProportionStatistics } from '../components/Estatisticas.jsx'
+import { HourlyChart, ProportionChart } from '../components/Estatisticas.jsx'
 
 function paraIsoComOffset(valorLocal) {
   if (!valorLocal) return ''
@@ -89,14 +88,10 @@ export default function Historico() {
       </div>
       <div className="row g-3 mb-3">
         <div className="col-12 col-lg-6">
-            <ChartCard title="Materiais nesta página" statistics={<ProportionStatistics metal={metalicas} other={leituras.length - metalicas} />}>
-              <Proporcao metalicas={metalicas} naoMetalicas={leituras.length - metalicas} />
-            </ChartCard>
+            <ProportionChart title="Materiais nesta página" metal={metalicas} other={leituras.length - metalicas} />
           </div>
         <div className="col-12 col-lg-6">
-            <ChartCard title="Leituras por hora" statistics={<HourlyStatistics readings={leituras} />}>
-              <PecasPorHora leituras={leituras} />
-            </ChartCard>
+            <HourlyChart title="Leituras por hora" readings={leituras} />
           </div>
       </div>
       <div className="card p-3 table-responsive">
